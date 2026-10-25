@@ -12,12 +12,12 @@
 
     <div class="app-container">
         <!-- Header -->
-        <header class="header-glass">
+        <header class="header-box">
             <div class="brand-wrapper">
-                <div class="brand-logo-glow">🧬</div>
+                <div class="brand-icon">🧬</div>
                 <div>
                     <h1 class="brand-title">KREIT · GENY</h1>
-                    <div class="brand-sub">Официальный веб-портал сообщества</div>
+                    <div class="brand-sub">ОФИЦИАЛЬНЫЙ ВЕБ-ПОРТАЛ СООБЩЕСТВА</div>
                 </div>
             </div>
 
@@ -31,97 +31,98 @@
 
         <!-- Stats Overview Grid -->
         <section class="stats-grid">
-            <div class="stat-card c1">
-                <div class="stat-label">Пользователей с GEN</div>
+            <div class="stat-card">
+                <div class="stat-label">ПОЛЬЗОВАТЕЛЕЙ С GEN</div>
                 <div id="stat-users" class="stat-value">—</div>
             </div>
-            <div class="stat-card c2">
-                <div class="stat-label">В обороте G.COIN</div>
+            <div class="stat-card">
+                <div class="stat-label">В ОБОРОТЕ G.COIN</div>
                 <div id="stat-coins" class="stat-value">—</div>
             </div>
-            <div class="stat-card c3">
-                <div class="stat-label">В обороте STARS</div>
+            <div class="stat-card">
+                <div class="stat-label">В ОБОРОТЕ STARS</div>
                 <div id="stat-stars" class="stat-value">—</div>
             </div>
-            <div class="stat-card c4">
-                <div class="stat-label">Общий голосовой онлайн</div>
+            <div class="stat-card">
+                <div class="stat-label">ОБЩИЙ ГОЛОСОВОЙ ОНЛАЙН</div>
                 <div id="stat-voice" class="stat-value">—</div>
             </div>
         </section>
 
         <!-- Navigation Tabs -->
-        <nav class="nav-tabs">
-            <button class="tab-btn active" data-tab="leaderboard">
-                <span>🏆</span> ТОП ЛИДЕРОВ
-            </button>
-            <button class="tab-btn" data-tab="users">
-                <span>👥</span> ПОЛЬЗОВАТЕЛИ & GEN
-            </button>
-            <button class="tab-btn" data-tab="market">
-                <span>🛒</span> БИРЖА BOURSE
-            </button>
-        </nav>
+        <div class="tab-box-wrapper">
+            <button class="tab-btn active" data-tab="leaderboard">ТОП ЛИДЕРОВ</button>
+            <button class="tab-btn" data-tab="users">ПОЛЬЗОВАТЕЛИ & GEN</button>
+            <button class="tab-btn" data-tab="market">БИРЖА BOURSE</button>
+        </div>
 
         <!-- TAB 1: LEADERBOARDS -->
         <main id="view-leaderboard" class="view-section active">
             <!-- Filter Pills -->
             <div class="leader-filters">
-                <button class="pill-filter active" data-filter="coins">🪙 По G.COIN</button>
-                <button class="pill-filter" data-filter="stars">⭐ По STARS</button>
-                <button class="pill-filter" data-filter="factor">🛡️ По Фактору доверия</button>
-                <button class="pill-filter" data-filter="level">🏆 По уровню</button>
-                <button class="pill-filter" data-filter="voice">🎤 По войс-онлайну</button>
+                <button class="pill-filter active" data-filter="coins">ПО G.COIN</button>
+                <button class="pill-filter" data-filter="stars">ПО STARS</button>
+                <button class="pill-filter" data-filter="factor">ПО ФАКТОРУ ДОВЕРИЯ</button>
+                <button class="pill-filter" data-filter="level">ПО УРОВНЮ</button>
+                <button class="pill-filter" data-filter="voice">ПО ВОЙС-ОНЛАЙНУ</button>
             </div>
 
             <!-- Top 3 Podium -->
             <div id="podium-section" class="podium-container"></div>
 
-            <!-- Remaining Rank Table -->
-            <table class="table-glass">
-                <thead>
-                    <tr>
-                        <th>РАНГ</th>
-                        <th>ПОЛЬЗОВАТЕЛЬ</th>
-                        <th>ФАКТОР</th>
-                        <th>БАЛАНС G.COIN</th>
-                        <th>ПОКАЗАТЕЛЬ</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboard-rows"></tbody>
-            </table>
+            <!-- Technical Table -->
+            <div class="section-panel">
+                <div class="panel-header-title">РАНГИ ЛИДЕРОВ СЕРВЕРА</div>
+                <table class="tech-table">
+                    <thead>
+                        <tr>
+                            <th>РАНГ</th>
+                            <th>ПОЛЬЗОВАТЕЛЬ</th>
+                            <th>ТЕГ GEN</th>
+                            <th>ФАКТОР</th>
+                            <th class="right">БАЛАНС G.COIN</th>
+                            <th class="right">ПОКАЗАТЕЛЬ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-rows"></tbody>
+                </table>
+            </div>
         </main>
 
         <!-- TAB 2: USERS CATALOG -->
         <section id="view-users" class="view-section">
-            <div class="controls-bar">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="user-search-input" class="search-input" placeholder="Поиск по нику или номеру GEN (например: 0.159)...">
-                </div>
+            <div class="section-panel" style="margin-bottom: 20px;">
+                <div class="panel-header-title">ПОИСК И ФИЛЬТРАЦИЯ ПОЛЬЗОВАТЕЛЕЙ</div>
+                <div class="controls-bar" style="margin-bottom: 0;">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="user-search-input" class="search-input" placeholder="Поиск по нику или номеру GEN (например: 0.159)...">
+                    </div>
 
-                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    <select id="color-filter-select" class="select-filter">
-                        <option value="all">Все расцветки GEN</option>
-                        <option value="красный">Красный</option>
-                        <option value="синий">Синий</option>
-                        <option value="голубой">Голубой</option>
-                        <option value="бирюзовый">Бирюзовый</option>
-                        <option value="розовый">Розовый</option>
-                        <option value="желтый">Жёлтый</option>
-                        <option value="оранжевый">Оранжевый</option>
-                        <option value="фиолетовый">Фиолетовый</option>
-                        <option value="silver">Серебро</option>
-                        <option value="gold">Золото</option>
-                        <option value="platinum">Платина</option>
-                    </select>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <select id="color-filter-select" class="select-filter">
+                            <option value="all">Все расцветки GEN</option>
+                            <option value="красный">Красный</option>
+                            <option value="синий">Синий</option>
+                            <option value="голубой">Голубой</option>
+                            <option value="бирюзовый">Бирюзовый</option>
+                            <option value="розовый">Розовый</option>
+                            <option value="желтый">Жёлтый</option>
+                            <option value="оранжевый">Оранжевый</option>
+                            <option value="фиолетовый">Фиолетовый</option>
+                            <option value="silver">Серебро</option>
+                            <option value="gold">Золото</option>
+                            <option value="platinum">Платина</option>
+                        </select>
 
-                    <select id="sort-select" class="select-filter">
-                        <option value="coins">Сортировка: G.COIN</option>
-                        <option value="stars">Сортировка: STARS</option>
-                        <option value="factor">Сортировка: Фактор доверия</option>
-                        <option value="level">Сортировка: Уровень</option>
-                        <option value="voice">Сортировка: Войс-онлайн</option>
-                    </select>
+                        <select id="sort-select" class="select-filter">
+                            <option value="coins">Сортировка: G.COIN</option>
+                            <option value="stars">Сортировка: STARS</option>
+                            <option value="factor">Сортировка: Фактор доверия</option>
+                            <option value="level">Сортировка: Уровень</option>
+                            <option value="voice">Сортировка: Войс-онлайн</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -130,11 +131,13 @@
 
         <!-- TAB 3: MARKET -->
         <section id="view-market" class="view-section">
-            <div style="margin-bottom: 24px;">
-                <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 6px;">📈 Цифровая биржа GEN и предметов BOURSE</h2>
-                <p style="color: var(--text-secondary); font-size: 14px;">Лоты, выставленные игроками на сервере GENN BOT в реальном времени</p>
+            <div class="section-panel">
+                <div class="panel-header-title">АКТИВНЫЕ ЛОТЫ НА БИРЖЕ BOURSE</div>
+                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; font-family: var(--font-mono);">
+                    Лоты со скинами и GEN-номерами, выставленные игроками на сервере GENN BOT в реальном времени
+                </p>
+                <div id="market-lots-grid" class="users-grid"></div>
             </div>
-            <div id="market-lots-grid" class="users-grid"></div>
         </section>
     </div>
 
@@ -143,66 +146,66 @@
         <div class="modal-card">
             <button class="modal-close" onclick="window.KREIT.closeUserModal()">&times;</button>
 
-            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px;">
-                <img id="modal-avatar" src="" style="width: 84px; height: 84px; border-radius: 50%; border: 3px solid #ffffff; object-fit: cover;">
+            <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 24px;">
+                <img id="modal-avatar" src="" style="width: 72px; height: 72px; border-radius: 50%; border: 2px solid #ffffff; object-fit: cover;">
                 <div>
-                    <h2 id="modal-username" style="font-size: 24px; font-weight: 800; color: #ffffff; margin-bottom: 4px;">—</h2>
-                    <div id="modal-gen" style="font-size: 16px; font-weight: 700;">GEN —</div>
-                    <div id="modal-color-name" style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">—</div>
+                    <h2 id="modal-username" style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 4px;">—</h2>
+                    <span id="modal-gen" class="badge-tag" style="font-size: 13px;">GEN —</span>
+                    <div id="modal-color-name" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px;">—</div>
                 </div>
             </div>
 
             <!-- Balances -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
-                <div style="background: rgba(10, 16, 28, 0.7); border: 1px solid var(--border-glass); border-radius: 14px; padding: 14px 18px;">
-                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">БАЛАНС G.COIN</div>
-                    <div id="modal-coins" style="font-size: 20px; font-weight: 800; color: #64dcff;">—</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <div style="background: #000000; border: 1px solid var(--border-color); border-radius: 4px; padding: 14px 16px;">
+                    <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">БАЛАНС G.COIN</div>
+                    <div id="modal-coins" style="font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: #64dcff;">—</div>
                 </div>
-                <div style="background: rgba(10, 16, 28, 0.7); border: 1px solid var(--border-glass); border-radius: 14px; padding: 14px 18px;">
-                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">БАЛАНС STARS</div>
-                    <div id="modal-stars" style="font-size: 20px; font-weight: 800; color: #ffd700;">—</div>
+                <div style="background: #000000; border: 1px solid var(--border-color); border-radius: 4px; padding: 14px 16px;">
+                    <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">БАЛАНС STARS</div>
+                    <div id="modal-stars" style="font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: #ffd700;">—</div>
                 </div>
             </div>
 
             <!-- Trust Factor -->
-            <div style="background: rgba(10, 16, 28, 0.7); border: 1px solid var(--border-glass); border-radius: 14px; padding: 18px; margin-bottom: 24px;">
+            <div style="background: #000000; border: 1px solid var(--border-color); border-radius: 4px; padding: 16px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <img id="modal-factor-shield" src="/assets/emojis/shield_green.png" style="width: 28px; height: 28px;">
+                        <img id="modal-factor-shield" src="/assets/emojis/shield_green.png" style="width: 24px; height: 24px;">
                         <div>
-                            <div style="font-size: 14px; font-weight: 700; color: #ffffff;">Фактор доверия</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">Множитель активности в войсе</div>
+                            <div style="font-size: 13px; font-weight: 700; color: #ffffff;">Фактор доверия</div>
+                            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);">Множитель активности в войсе</div>
                         </div>
                     </div>
-                    <div id="modal-factor-num" style="font-size: 18px; font-weight: 800; color: #ffffff;">— / 120</div>
+                    <div id="modal-factor-num" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: #ffffff;">— / 120</div>
                 </div>
-                <div style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 6px; overflow: hidden;">
-                    <div id="modal-factor-bar" style="width: 50%; height: 100%; background: linear-gradient(90deg, #32d74b, #00d2ff); border-radius: 6px;"></div>
+                <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden;">
+                    <div id="modal-factor-bar" style="width: 50%; height: 100%; background: #ffffff; border-radius: 3px;"></div>
                 </div>
             </div>
 
             <!-- Activity Stats -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
-                <div style="background: rgba(10, 16, 28, 0.7); border: 1px solid var(--border-glass); border-radius: 14px; padding: 14px 18px;">
-                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">🎤 ВОЙС ОНЛАЙН</div>
-                    <div id="modal-voice" style="font-size: 16px; font-weight: 700; color: #ffffff;">—</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <div style="background: #000000; border: 1px solid var(--border-color); border-radius: 4px; padding: 14px 16px;">
+                    <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">ВОЙС ОНЛАЙН</div>
+                    <div id="modal-voice" style="font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: #ffffff;">—</div>
                 </div>
-                <div style="background: rgba(10, 16, 28, 0.7); border: 1px solid var(--border-glass); border-radius: 14px; padding: 14px 18px;">
-                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">💬 СООБЩЕНИЙ</div>
-                    <div id="modal-messages" style="font-size: 16px; font-weight: 700; color: #ffffff;">—</div>
+                <div style="background: #000000; border: 1px solid var(--border-color); border-radius: 4px; padding: 14px 16px;">
+                    <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">СООБЩЕНИЙ</div>
+                    <div id="modal-messages" style="font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: #ffffff;">—</div>
                 </div>
             </div>
 
             <!-- Level -->
-            <div style="margin-bottom: 24px; background: rgba(10, 16, 28, 0.7); border: 1px solid var(--border-glass); border-radius: 14px; padding: 14px 18px;">
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">🏆 УРОВЕНЬ АККАУНТА</div>
-                <div id="modal-level" style="font-size: 17px; font-weight: 800; color: #ffffff;">—</div>
+            <div style="margin-bottom: 20px; background: #000000; border: 1px solid var(--border-color); border-radius: 4px; padding: 14px 16px;">
+                <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">УРОВЕНЬ АККАУНТА</div>
+                <div id="modal-level" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: #ffffff;">—</div>
             </div>
 
             <!-- Equipped Presents -->
             <div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 10px;">ПОДАРКИ НА ПРОФИЛЕ</div>
-                <div id="modal-presents-container" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+                <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 10px;">ПОДАРКИ НА ПРОФИЛЕ</div>
+                <div id="modal-presents-container" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
             </div>
         </div>
     </div>

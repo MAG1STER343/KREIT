@@ -196,24 +196,27 @@
             const shieldImg = getShieldPath(u.factor);
             return `
                 <tr onclick="window.KREIT.openUserModal(${u.user_id})">
-                    <td>#${rank}</td>
+                    <td class="mono-val" style="color: var(--text-muted); width: 60px;">#${rank}</td>
                     <td>
-                        <div class="user-cell">
-                            <img src="${u.avatar_url}" class="table-av" style="border-color: ${hex}">
+                        <div class="user-title-cell">
+                            <img src="${u.avatar_url}" class="table-user-av" style="border-color: ${hex}">
                             <div>
-                                <div class="user-cell-name">${escapeHtml(u.display_name || u.username)}</div>
-                                <div class="user-cell-gen" style="color: ${hex}">GEN ${escapeHtml(u.gen_number || "—")} • ${escapeHtml(u.gen_color || "")}</div>
+                                <div class="table-user-name">${escapeHtml(u.display_name || u.username)}</div>
+                                <div class="table-user-sub">${escapeHtml(u.gen_color || "Цвет GEN")}</div>
                             </div>
                         </div>
                     </td>
                     <td>
+                        <span class="badge-tag" style="border-color: ${hex}; color: ${hex};">GEN ${escapeHtml(u.gen_number || "—")}</span>
+                    </td>
+                    <td>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <img src="${shieldImg}" style="width: 20px; height: 20px;">
-                            <span>${parseFloat(u.factor || 60).toFixed(1)}</span>
+                            <span class="mono-val">${parseFloat(u.factor || 60).toFixed(1)}</span>
                         </div>
                     </td>
-                    <td style="font-weight: 700; color: #ffffff;">${formatNumber(u.coins)} G</td>
-                    <td style="font-weight: 800; color: var(--accent-gold);">${getScoreString(u)}</td>
+                    <td class="right mono-val" style="color: #ffffff;">${formatNumber(u.coins)}</td>
+                    <td class="right mono-val" style="font-weight: 700; color: var(--accent-gold);">${getScoreString(u)}</td>
                 </tr>
             `;
         }).join("");
@@ -267,37 +270,37 @@
             let presentsHtml = "";
             for (let i = 0; i < 5; i++) {
                 if (i < presents.length) {
-                    presentsHtml += `<div class="present-slot"><span title="${escapeHtml(presents[i].name)}">🎁</span></div>`;
+                    presentsHtml += `<div class="p-slot"><span title="${escapeHtml(presents[i].name)}">🎁</span></div>`;
                 } else {
-                    presentsHtml += `<div class="present-slot empty">+</div>`;
+                    presentsHtml += `<div class="p-slot empty">+</div>`;
                 }
             }
 
             return `
-                <div class="user-card" onclick="window.KREIT.openUserModal(${u.user_id})" style="border-top: 2px solid ${hex};">
+                <div class="user-card" onclick="window.KREIT.openUserModal(${u.user_id})" style="border-left: 3px solid ${hex};">
                     <div class="user-card-header">
-                        <img src="${u.avatar_url}" class="user-card-avatar" style="border: 2px solid ${hex}; box-shadow: 0 0 16px ${hex}66;">
+                        <img src="${u.avatar_url}" class="user-card-avatar" style="border: 1px solid ${hex};">
                         <div class="user-card-info">
                             <div class="user-card-title">${escapeHtml(u.display_name || u.username)}</div>
-                            <div class="user-card-gen" style="color: ${hex}">GEN ${escapeHtml(u.gen_number || "—")}</div>
+                            <span class="badge-tag" style="border-color: ${hex}; color: ${hex};">GEN ${escapeHtml(u.gen_number || "—")}</span>
                         </div>
-                        <img src="${shieldImg}" class="factor-shield-icon" title="Фактор доверия: ${parseFloat(u.factor || 60).toFixed(1)}">
+                        <img src="${shieldImg}" style="width: 24px; height: 24px;" title="Фактор доверия: ${parseFloat(u.factor || 60).toFixed(1)}">
                     </div>
 
-                    <div class="user-card-balances">
-                        <div class="balance-item">
-                            <span class="bal-title">G.COIN</span>
-                            <span class="bal-num" style="color: #64dcff;">🪙 ${formatNumber(u.coins)}</span>
+                    <div class="user-card-metrics">
+                        <div class="metric-item">
+                            <span class="metric-label">G.COIN</span>
+                            <span class="metric-val" style="color: #64dcff;">🪙 ${formatNumber(u.coins)}</span>
                         </div>
-                        <div class="balance-item">
-                            <span class="bal-title">STARS</span>
-                            <span class="bal-num" style="color: #ffd700;">⭐ ${formatStars(u.stars)}</span>
+                        <div class="metric-item">
+                            <span class="metric-label">STARS</span>
+                            <span class="metric-val" style="color: #ffd700;">⭐ ${formatStars(u.stars)}</span>
                         </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">ПОДАРКИ НА ПРОФИЛЕ</span>
-                        <div class="presents-shelf">${presentsHtml}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 4px;">
+                        <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">ПОДАРКИ</span>
+                        <div class="presents-row">${presentsHtml}</div>
                     </div>
                 </div>
             `;

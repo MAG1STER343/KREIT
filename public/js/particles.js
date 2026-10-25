@@ -92,15 +92,15 @@
     initParticles();
 
     function drawBackground() {
-        // 1. Deep Midnight Sapphire Base Gradient
+        // 1. Ultra Dark Pitch-Black Base Gradient
         const grad = ctx.createLinearGradient(0, 0, width, height);
-        grad.addColorStop(0, "#08142c");
-        grad.addColorStop(0.5, "#0b1c3c");
-        grad.addColorStop(1, "#0d234a");
+        grad.addColorStop(0, "#000000");
+        grad.addColorStop(0.5, "#030712");
+        grad.addColorStop(1, "#050b18");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, width, height);
 
-        // 2. Soft moving ambient light orbs
+        // 2. Soft moving ambient light orbs (ultra-subtle)
         for (const orb of orbs) {
             orb.x += orb.vx;
             orb.y += orb.vy;
@@ -110,7 +110,7 @@
 
             const radial = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r);
             radial.addColorStop(0, orb.color);
-            radial.addColorStop(1, "rgba(8, 20, 44, 0)");
+            radial.addColorStop(1, "rgba(0, 0, 0, 0)");
             ctx.fillStyle = radial;
             ctx.beginPath();
             ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2);
@@ -121,8 +121,8 @@
         mouse.x += (mouse.targetX - mouse.x) * 0.05;
         mouse.y += (mouse.targetY - mouse.y) * 0.05;
         const mouseGlow = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 350);
-        mouseGlow.addColorStop(0, "rgba(40, 120, 220, 0.15)");
-        mouseGlow.addColorStop(1, "rgba(8, 20, 44, 0)");
+        mouseGlow.addColorStop(0, "rgba(25, 75, 160, 0.12)");
+        mouseGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.fillStyle = mouseGlow;
         ctx.beginPath();
         ctx.arc(mouse.x, mouse.y, 350, 0, Math.PI * 2);
