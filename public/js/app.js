@@ -37,23 +37,58 @@
         return "#" + intVal.toString(16).padStart(6, "0");
     }
 
-    // ================== DATA FETCHING ==================
+    // ================== DATA FETCHING & CONTINUOUS CONNECTION ==================
+    let isFetching = false;
+
     async function fetchSyncData() {
+        if (isFetching) return;
+        isFetching = true;
+
+        let data = null;
+        let isDirect = false;
+
+        // 1. Попытка прямого соединения с ботом (http://127.0.0.1:5055/api/sync)
         try {
-            const resp = await fetch("/api/sync");
-            if (resp.ok) {
-                const data = await resp.json();
-                globalData = data;
-                updateStatusBadge(data.bot_online, data.last_sync, data.is_cached);
-                updateStatsOverview(data.stats, data.users);
-                renderActiveView();
-            } else {
-                updateStatusBadge(false, 0, true);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1200);
+            const directResp = await fetch("http://127.0.0.1:5055/api/sync", { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (directResp.ok) {
+                data = await directResp.json();
+                data.bot_online = true;
+                data.is_cached = false;
+                isDirect = true;
             }
         } catch (e) {
-            console.warn("[SYNC] Ошибка получения данных от сервера:", e);
+            // direct failed
+        }
+
+        // 2. Обращение через сервер API
+        if (!data) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const resp = await fetch("/api/sync", { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (resp.ok) {
+                    data = await resp.json();
+                }
+            } catch (e) {
+                console.warn("[SYNC] Запрос к API не ответил:", e);
+            }
+        }
+
+        if (data) {
+            globalData = data;
+            const online = Boolean(data.bot_online || isDirect);
+            updateStatusBadge(online, data.last_sync, data.is_cached);
+            updateStatsOverview(data.stats, data.users);
+            renderActiveView();
+        } else {
             updateStatusBadge(false, 0, true);
         }
+
+        isFetching = false;
     }
 
     function updateStatusBadge(isOnline, lastSync, isCached) {
@@ -63,12 +98,12 @@
 
         if (isOnline) {
             badge.className = "status-pill online";
-            statusText.innerText = "БОТ ОНЛАЙН";
-            syncTimer.innerText = "• Синхронизация раз в 5 сек (Live)";
+            statusText.innerText = "БОТ В СЕТИ";
+            syncTimer.innerText = "• Непрерывное подключение (3с)";
         } else {
             badge.className = "status-pill offline";
-            statusText.innerText = "АВТОНОМНЫЙ РЕЖИМ";
-            syncTimer.innerText = isCached ? "• База данных сохранена на сервере" : "• Ожидание подключения";
+            statusText.innerText = "ПОИСК СИГНАЛА БОТА...";
+            syncTimer.innerText = "• Постоянное автоподключение (3с)";
         }
     }
 
@@ -277,30 +312,48 @@
             }
 
             return `
-                <div class="user-card" onclick="window.KREIT.openUserModal(${u.user_id})" style="border-left: 3px solid ${hex};">
-                    <div class="user-card-header">
-                        <img src="${u.avatar_url}" class="user-card-avatar" style="border: 1px solid ${hex};">
-                        <div class="user-card-info">
-                            <div class="user-card-title">${escapeHtml(u.display_name || u.username)}</div>
-                            <span class="badge-tag" style="border-color: ${hex}; color: ${hex};">GEN ${escapeHtml(u.gen_number || "—")}</span>
-                        </div>
-                        <img src="${shieldImg}" style="width: 24px; height: 24px;" title="Фактор доверия: ${parseFloat(u.factor || 60).toFixed(1)}">
-                    </div>
-
-                    <div class="user-card-metrics">
-                        <div class="metric-item">
-                            <span class="metric-label">G.COIN</span>
-                            <span class="metric-val" style="color: #64dcff;">🪙 ${formatNumber(u.coins)}</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="metric-label">STARS</span>
-                            <span class="metric-val" style="color: #ffd700;">⭐ ${formatStars(u.stars)}</span>
+                <div class="user-widget-horizontal" onclick="window.KREIT.openUserModal(${u.user_id})" style="--user-glow: ${hex}; border-left: 4px solid ${hex};">
+                    <div class="uwh-left">
+                        <img src="${u.avatar_url}" class="uwh-avatar" style="border: 2px solid ${hex};">
+                        <div class="uwh-user-meta">
+                            <div class="uwh-username">${escapeHtml(u.display_name || u.username)}</div>
+                            <div class="uwh-gen-row">
+                                <span class="badge-tag" style="border-color: ${hex}; color: ${hex};">GEN ${escapeHtml(u.gen_number || "—")}</span>
+                                <span class="uwh-color-name">${escapeHtml(u.gen_color || "Цвет GEN")}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 4px;">
-                        <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">ПОДАРКИ</span>
-                        <div class="presents-row">${presentsHtml}</div>
+                    <div class="uwh-center">
+                        <div class="uwh-metrics-group">
+                            <div class="uwh-metric">
+                                <span class="uwh-metric-label">G.COIN</span>
+                                <span class="uwh-metric-val mono-val" style="color: #64dcff;">🪙 ${formatNumber(u.coins)}</span>
+                            </div>
+                            <div class="uwh-metric">
+                                <span class="uwh-metric-label">STARS</span>
+                                <span class="uwh-metric-val mono-val" style="color: #ffd700;">⭐ ${formatStars(u.stars)}</span>
+                            </div>
+                            <div class="uwh-metric">
+                                <span class="uwh-metric-label">УРОВЕНЬ</span>
+                                <span class="uwh-metric-val mono-val">LVL ${u.level || 1}</span>
+                            </div>
+                        </div>
+                        <div class="uwh-presents-group">
+                            <span class="uwh-metric-label">ПОДАРКИ</span>
+                            <div class="presents-row">${presentsHtml}</div>
+                        </div>
+                    </div>
+
+                    <div class="uwh-right">
+                        <div class="uwh-factor-box" title="Фактор доверия: ${parseFloat(u.factor || 60).toFixed(1)} / 120">
+                            <img src="${shieldImg}" style="width: 22px; height: 22px;">
+                            <span class="mono-val" style="font-size: 13px; font-weight: 700;">${parseFloat(u.factor || 60).toFixed(1)}</span>
+                        </div>
+                        <div class="uwh-button-open">
+                            <span>ПРОФИЛЬ</span>
+                            <span class="uwh-chevron">➔</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -460,8 +513,8 @@
             });
         }
 
-        // Start initial sync & loop every 5 seconds
+        // Start initial sync & continuous loop every 3 seconds
         fetchSyncData();
-        setInterval(fetchSyncData, 5000);
+        setInterval(fetchSyncData, 3000);
     });
 })();

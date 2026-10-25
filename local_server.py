@@ -12,7 +12,7 @@ PUBLIC_DIR = BASE_DIR / "public"
 CACHE_FILE = DATA_DIR / "cache_database.json"
 
 BOT_API_URL = os.environ.get("BOT_API_URL", "http://127.0.0.1:5055/api/sync")
-SYNC_INTERVAL = 5  # секунд (по ТЗ: сбор данных каждые 5 сек)
+SYNC_INTERVAL = 3  # секунд (постоянный мониторинг и синхронизация)
 PORT = int(os.environ.get("PORT", 3000))
 
 # Внутреннее состояние сайта

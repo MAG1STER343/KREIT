@@ -414,7 +414,234 @@ body {
     cursor: pointer;
 }
 
-/* Users Grid */
+/* =========================================================
+   HORIZONTAL INTERACTIVE USER WIDGETS WITH WAVE PULSE
+   ========================================================= */
+
+.users-list-horizontal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.user-widget-horizontal {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 14px 22px;
+    min-height: 82px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                border-color 0.22s ease, 
+                box-shadow 0.22s ease;
+}
+
+/* Световая волна пульсации при наведении (Wave Pulse Shimmer) */
+.user-widget-horizontal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.22),
+        rgba(255, 255, 255, 0.03),
+        transparent
+    );
+    transform: skewX(-25deg);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.user-widget-horizontal:hover::before {
+    animation: waveShimmerPulse 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+@keyframes waveShimmerPulse {
+    0% {
+        left: -150%;
+        opacity: 0;
+    }
+    30% {
+        opacity: 1;
+    }
+    100% {
+        left: 200%;
+        opacity: 0;
+    }
+}
+
+/* Пульсирующая неоновая волна свечения рамок в цвет GEN */
+.user-widget-horizontal:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.35);
+    animation: waveGlowPulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes waveGlowPulse {
+    0% {
+        box-shadow: 0 0 10px var(--user-glow, rgba(0, 210, 255, 0.2)), inset 0 0 8px var(--user-glow, rgba(0, 210, 255, 0.08));
+    }
+    100% {
+        box-shadow: 0 0 28px var(--user-glow, rgba(0, 210, 255, 0.45)), inset 0 0 16px var(--user-glow, rgba(0, 210, 255, 0.15));
+    }
+}
+
+/* Внутренние блоки горизонтального виджета */
+.uwh-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 280px;
+    max-width: 340px;
+}
+
+.uwh-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.user-widget-horizontal:hover .uwh-avatar {
+    transform: scale(1.06);
+}
+
+.uwh-user-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.uwh-username {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.uwh-gen-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.uwh-color-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.uwh-center {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex: 1;
+    justify-content: center;
+}
+
+.uwh-metrics-group {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.uwh-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.uwh-metric-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.uwh-metric-val {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.uwh-presents-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.uwh-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-shrink: 0;
+}
+
+.uwh-factor-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #000000;
+    border: 1px solid var(--border-subtle);
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+/* Кнопка ПРОФИЛЬ внутри виджета */
+.uwh-button-open {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #000000;
+    border: 1px solid var(--border-bright);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition: all 0.2s ease;
+}
+
+.user-widget-horizontal:hover .uwh-button-open {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.4);
+}
+
+.uwh-chevron {
+    transition: transform 0.2s ease;
+}
+
+.user-widget-horizontal:hover .uwh-chevron {
+    transform: translateX(4px);
+}
+
+/* Users Grid (Legacy / Market fallback) */
 .users-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
