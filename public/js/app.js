@@ -11,6 +11,17 @@
     let selectedColor = "all";
     let sortBy = "coins";
 
+    // Current authorized user (saved in localStorage)
+    let currentUser = null;
+    try {
+        const savedAuth = localStorage.getItem("kreit_auth_user");
+        if (savedAuth) {
+            currentUser = JSON.parse(savedAuth);
+        }
+    } catch (e) {
+        currentUser = null;
+    }
+
     // Shield emoji mapper
     function getShieldPath(factor) {
         const f = parseFloat(factor || 60);
@@ -83,12 +94,166 @@
             const online = Boolean(data.bot_online || isDirect);
             updateStatusBadge(online, data.last_sync, data.is_cached);
             updateStatsOverview(data.stats, data.users);
+            syncCurrentUserData();
             renderActiveView();
         } else {
             updateStatusBadge(false, 0, true);
         }
 
         isFetching = false;
+    }
+
+    function syncCurrentUserData() {
+        if (!currentUser || !globalData || !globalData.users) return;
+        const fresh = globalData.users.find(u => String(u.user_id) === String(currentUser.user_id));
+        if (fresh) {
+            currentUser = { ...currentUser, ...fresh };
+            try {
+                localStorage.setItem("kreit_auth_user", JSON.stringify(currentUser));
+            } catch (e) {}
+            renderAuthHeroBanner();
+        }
+    }
+
+    function renderAuthHeroBanner() {
+        const hero = document.getElementById("auth-user-hero");
+        const loginBtn = document.getElementById("btn-open-login");
+        const loginLabel = document.getElementById("btn-login-label");
+        if (!hero) return;
+
+        if (!currentUser) {
+            hero.style.display = "none";
+            if (loginBtn) loginBtn.classList.remove("logged-in");
+            if (loginLabel) loginLabel.innerText = "ВОЙТИ";
+            return;
+        }
+
+        const hex = getGenColorHex(currentUser.gen_color_value);
+        hero.style.display = "block";
+        hero.style.setProperty("--user-hero-color", hex);
+
+        if (loginBtn) loginBtn.classList.add("logged-in");
+        if (loginLabel) loginLabel.innerText = currentUser.display_name || currentUser.username || "ПРОФИЛЬ";
+
+        const genNum = currentUser.gen_number || "—";
+        const genBig = document.getElementById("auth-hero-gen-big");
+        if (genBig) {
+            genBig.innerHTML = `GEN ${escapeHtml(genNum)}`;
+            genBig.style.color = hex;
+            genBig.style.textShadow = `0 0 25px ${hex}`;
+        }
+
+        const nameEl = document.getElementById("auth-hero-name");
+        if (nameEl) nameEl.innerText = currentUser.display_name || currentUser.username || "Пользователь";
+
+        const loginEl = document.getElementById("auth-hero-login");
+        if (loginEl) loginEl.innerText = `@${currentUser.site_username || currentUser.discord_username || currentUser.username}`;
+
+        const colorEl = document.getElementById("auth-hero-color");
+        if (colorEl) {
+            colorEl.innerText = currentUser.gen_color || "Цвет GEN";
+            colorEl.style.color = hex;
+        }
+
+        const avatarEl = document.getElementById("auth-hero-avatar");
+        if (avatarEl) {
+            avatarEl.src = currentUser.avatar_url || "https://cdn.discordapp.com/embed/avatars/0.png";
+            avatarEl.style.borderColor = hex;
+            avatarEl.style.boxShadow = `0 0 20px ${hex}88`;
+        }
+
+        const coinsEl = document.getElementById("auth-hero-coins");
+        if (coinsEl) coinsEl.innerText = `${formatNumber(currentUser.coins)} G.COIN`;
+
+        const starsEl = document.getElementById("auth-hero-stars");
+        if (starsEl) starsEl.innerText = `${formatStars(currentUser.stars)} ⭐`;
+
+        const voiceEl = document.getElementById("auth-hero-voice");
+        if (voiceEl) {
+            const vMins = currentUser.voice_minutes || 0;
+            const h = Math.floor(vMins / 60);
+            const m = vMins % 60;
+            voiceEl.innerText = `${h} ч ${m} мин`;
+        }
+
+        const factorEl = document.getElementById("auth-hero-factor-num");
+        if (factorEl) factorEl.innerText = `${parseFloat(currentUser.factor || 60).toFixed(1)} / 120`;
+
+        const shieldEl = document.getElementById("auth-hero-shield");
+        if (shieldEl) shieldEl.src = getShieldPath(currentUser.factor);
+
+        const lvlEl = document.getElementById("auth-hero-level");
+        if (lvlEl) {
+            const streak = currentUser.activity_streak_days || 0;
+            lvlEl.innerText = `LVL ${currentUser.level || 1} • 🔥 ${streak} дн.`;
+        }
+    }
+
+    // ================== CYBER TEXT SCRAMBLE ANIMATION (1 СЕКУНДА) ==================
+    let isScrambling = false;
+    function runTextScrambleAnimation(durationMs = 1000) {
+        if (isScrambling) return;
+        isScrambling = true;
+
+        const glyphs = "01010101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!<>-_\\/[]{}—=+*^?#%&@";
+        const selectors = [
+            ".brand-title", ".brand-sub", ".stat-label", ".stat-value",
+            ".tab-btn", ".pill-filter", ".panel-header-title", ".tech-table th",
+            ".podium-name", ".podium-rank-pill", ".podium-rank-label", ".podium-score-val",
+            ".auth-hero-gen-big", ".hero-stat-label", ".hero-stat-val",
+            ".table-user-name", ".table-user-sub", ".uwh-username", ".uwh-metric-val"
+        ];
+
+        const elements = document.querySelectorAll(selectors.join(", "));
+        const targets = [];
+
+        elements.forEach(el => {
+            const txt = (el.innerText || "").trim();
+            if (txt.length > 0 && el.children.length === 0) {
+                targets.push({
+                    el: el,
+                    text: txt,
+                    length: txt.length
+                });
+            }
+        });
+
+        if (targets.length === 0) {
+            isScrambling = false;
+            return;
+        }
+
+        const startTime = performance.now();
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(1, elapsed / durationMs);
+
+            targets.forEach(item => {
+                const resolved = Math.floor(progress * item.length);
+                let out = "";
+                for (let i = 0; i < item.length; i++) {
+                    const originalChar = item.text[i];
+                    if (i < resolved || originalChar === " " || originalChar === "\n" || originalChar === "•" || originalChar === "⭐" || originalChar === "🔥" || originalChar === "🛡️" || originalChar === "🪙") {
+                        out += originalChar;
+                    } else {
+                        out += glyphs[Math.floor(Math.random() * glyphs.length)];
+                    }
+                }
+                item.el.innerText = out;
+            });
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                targets.forEach(item => {
+                    item.el.innerText = item.text;
+                });
+                isScrambling = false;
+            }
+        }
+
+        requestAnimationFrame(step);
     }
 
     function updateStatusBadge(isOnline, lastSync, isCached) {
@@ -160,62 +325,78 @@
             return `${formatNumber(u.coins)} G.COIN`;
         }
 
+        function buildPedestalColumn(user, rank) {
+            if (!user) {
+                return `<div class="podium-column empty"></div>`;
+            }
+            const hex = getGenColorHex(user.gen_color_value);
+            const score = getScoreString(user);
+            const name = user.display_name || user.username || "Пользователь";
+            const genNum = user.gen_number || "—";
+            const avatarUrl = user.avatar_url || "https://cdn.discordapp.com/embed/avatars/0.png";
+
+            const isMe = Boolean(currentUser && String(currentUser.user_id) === String(user.user_id));
+            const meBadge = isMe ? `<span class="current-user-badge">✨ ЭТО ВЫ</span>` : "";
+            const meClass = isMe ? " is-current-user" : "";
+
+            let rankClass = "second";
+            let rankNum = "02";
+            let rankPill = "🥈 2 МЕСТО";
+            let rankLabel = "2ND PLACE";
+            let crownIcon = "🥈";
+
+            if (rank === 1) {
+                rankClass = "first";
+                rankNum = "01";
+                rankPill = "👑 ЧЕМПИОН";
+                rankLabel = "1ST PLACE";
+                crownIcon = "🥇";
+            } else if (rank === 3) {
+                rankClass = "third";
+                rankNum = "03";
+                rankPill = "🥉 3 МЕСТО";
+                rankLabel = "3RD PLACE";
+                crownIcon = "🥉";
+            }
+
+            return `
+                <div class="podium-column ${rankClass}${meClass}" onclick="window.KREIT.openUserModal(${user.user_id})">
+                    <div class="podium-card">
+                        <div class="podium-badge-wrapper">
+                            <span class="podium-rank-pill">${rankPill}</span>
+                        </div>
+                        <div class="podium-avatar-wrapper">
+                            <div class="avatar-cyber-ring" style="--ring-color: ${hex};">
+                                <img src="${avatarUrl}" class="podium-avatar" style="border-color: ${hex};" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            </div>
+                            <div class="avatar-rank-disc">${crownIcon}</div>
+                        </div>
+                        <div class="podium-name" title="${escapeHtml(name)}">${escapeHtml(name)} ${meBadge}</div>
+                        <div class="podium-gen-badge" style="color: ${hex}; border-color: ${hex}55; background: ${hex}18;">
+                            <span class="gen-dot" style="background: ${hex};"></span>
+                            GEN ${escapeHtml(genNum)}
+                        </div>
+                        <div class="podium-score-box">
+                            <div class="podium-score-val">${score}</div>
+                        </div>
+                    </div>
+                    <div class="pedestal-stand">
+                        <div class="pedestal-top-plate"></div>
+                        <div class="pedestal-pillar">
+                            <div class="pedestal-cyber-grid"></div>
+                            <div class="pedestal-watermark">${rankNum}</div>
+                            <div class="pedestal-rank-label">${rankLabel}</div>
+                            <div class="pedestal-light-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         let podiumHtml = "";
-
-        // 2nd Place
-        if (top2) {
-            const hex = getGenColorHex(top2.gen_color_value);
-            podiumHtml += `
-                <div class="podium-card second" onclick="window.KREIT.openUserModal(${top2.user_id})">
-                    <div class="crown-badge">🥈</div>
-                    <div class="podium-avatar-wrapper">
-                        <img src="${top2.avatar_url}" class="podium-avatar" style="border-color: ${hex}; box-shadow: 0 0 20px ${hex}88;">
-                    </div>
-                    <div class="podium-name">${escapeHtml(top2.display_name || top2.username)}</div>
-                    <div class="podium-gen" style="color: ${hex}">GEN ${escapeHtml(top2.gen_number || "—")}</div>
-                    <div class="podium-score">${getScoreString(top2)}</div>
-                </div>
-            `;
-        } else {
-            podiumHtml += `<div></div>`;
-        }
-
-        // 1st Place
-        if (top1) {
-            const hex = getGenColorHex(top1.gen_color_value);
-            podiumHtml += `
-                <div class="podium-card first" onclick="window.KREIT.openUserModal(${top1.user_id})">
-                    <div class="crown-badge">🥇</div>
-                    <div class="podium-avatar-wrapper">
-                        <img src="${top1.avatar_url}" class="podium-avatar" style="border-color: ${hex}; box-shadow: 0 0 30px ${hex};">
-                    </div>
-                    <div class="podium-name" style="font-size: 20px;">${escapeHtml(top1.display_name || top1.username)}</div>
-                    <div class="podium-gen" style="color: ${hex}; font-size: 15px;">GEN ${escapeHtml(top1.gen_number || "—")}</div>
-                    <div class="podium-score" style="font-size: 24px;">${getScoreString(top1)}</div>
-                </div>
-            `;
-        } else {
-            podiumHtml += `<div></div>`;
-        }
-
-        // 3rd Place
-        if (top3) {
-            const hex = getGenColorHex(top3.gen_color_value);
-            podiumHtml += `
-                <div class="podium-card third" onclick="window.KREIT.openUserModal(${top3.user_id})">
-                    <div class="crown-badge">🥉</div>
-                    <div class="podium-avatar-wrapper">
-                        <img src="${top3.avatar_url}" class="podium-avatar" style="border-color: ${hex}; box-shadow: 0 0 20px ${hex}88;">
-                    </div>
-                    <div class="podium-name">${escapeHtml(top3.display_name || top3.username)}</div>
-                    <div class="podium-gen" style="color: ${hex}">GEN ${escapeHtml(top3.gen_number || "—")}</div>
-                    <div class="podium-score">${getScoreString(top3)}</div>
-                </div>
-            `;
-        } else {
-            podiumHtml += `<div></div>`;
-        }
-
+        podiumHtml += buildPedestalColumn(top2, 2);
+        podiumHtml += buildPedestalColumn(top1, 1);
+        podiumHtml += buildPedestalColumn(top3, 3);
         podiumContainer.innerHTML = podiumHtml;
 
         // Table for ranks 4+
@@ -229,14 +410,18 @@
             const rank = idx + 4;
             const hex = getGenColorHex(u.gen_color_value);
             const shieldImg = getShieldPath(u.factor);
+            const isMe = Boolean(currentUser && String(currentUser.user_id) === String(u.user_id));
+            const rowClass = isMe ? ' class="is-current-user"' : "";
+            const meBadge = isMe ? `<span class="current-user-badge">✨ ВЫ</span>` : "";
+
             return `
-                <tr onclick="window.KREIT.openUserModal(${u.user_id})">
+                <tr${rowClass} onclick="window.KREIT.openUserModal(${u.user_id})">
                     <td class="mono-val" style="color: var(--text-muted); width: 60px;">#${rank}</td>
                     <td>
                         <div class="user-title-cell">
                             <img src="${u.avatar_url}" class="table-user-av" style="border-color: ${hex}">
                             <div>
-                                <div class="table-user-name">${escapeHtml(u.display_name || u.username)}</div>
+                                <div class="table-user-name">${escapeHtml(u.display_name || u.username)} ${meBadge}</div>
                                 <div class="table-user-sub">${escapeHtml(u.gen_color || "Цвет GEN")}</div>
                             </div>
                         </div>
@@ -302,6 +487,10 @@
             const shieldImg = getShieldPath(u.factor);
             const presents = u.equipped_presents || [];
 
+            const isMe = Boolean(currentUser && String(currentUser.user_id) === String(u.user_id));
+            const meClass = isMe ? " is-current-user" : "";
+            const meBadge = isMe ? `<span class="current-user-badge">✨ ВЫ</span>` : "";
+
             let presentsHtml = "";
             for (let i = 0; i < 5; i++) {
                 if (i < presents.length) {
@@ -312,11 +501,11 @@
             }
 
             return `
-                <div class="user-widget-horizontal" onclick="window.KREIT.openUserModal(${u.user_id})" style="--user-glow: ${hex}; border-left: 4px solid ${hex};">
+                <div class="user-widget-horizontal${meClass}" onclick="window.KREIT.openUserModal(${u.user_id})" style="--user-glow: ${hex}; border-left: 4px solid ${hex};">
                     <div class="uwh-left">
                         <img src="${u.avatar_url}" class="uwh-avatar" style="border: 2px solid ${hex};">
                         <div class="uwh-user-meta">
-                            <div class="uwh-username">${escapeHtml(u.display_name || u.username)}</div>
+                            <div class="uwh-username">${escapeHtml(u.display_name || u.username)} ${meBadge}</div>
                             <div class="uwh-gen-row">
                                 <span class="badge-tag" style="border-color: ${hex}; color: ${hex};">GEN ${escapeHtml(u.gen_number || "—")}</span>
                                 <span class="uwh-color-name">${escapeHtml(u.gen_color || "Цвет GEN")}</span>
@@ -455,6 +644,9 @@
 
     // ================== EVENT LISTENERS ==================
     document.addEventListener("DOMContentLoaded", () => {
+        // Initial auth check and hero banner render
+        renderAuthHeroBanner();
+
         // Tab switching
         document.querySelectorAll(".tab-btn").forEach(btn => {
             btn.addEventListener("click", () => {
@@ -465,6 +657,7 @@
                 document.querySelectorAll(".view-section").forEach(sec => sec.classList.remove("active"));
                 document.getElementById(`view-${currentTab}`).classList.add("active");
                 renderActiveView();
+                runTextScrambleAnimation(800);
             });
         });
 
@@ -475,6 +668,7 @@
                 pill.classList.add("active");
                 currentLeaderFilter = pill.dataset.filter;
                 renderLeaderboard();
+                runTextScrambleAnimation(600);
             });
         });
 
@@ -505,7 +699,7 @@
             });
         }
 
-        // Modal backdrop close
+        // User profile modal backdrop close
         const modal = document.getElementById("user-profile-modal");
         if (modal) {
             modal.addEventListener("click", (e) => {
@@ -513,8 +707,123 @@
             });
         }
 
+        // ================== LOGIN MODAL & AUTH LISTENERS ==================
+        const loginBtn = document.getElementById("btn-open-login");
+        const loginModal = document.getElementById("login-modal");
+        const closeLoginBtn = document.getElementById("btn-close-login");
+        const loginForm = document.getElementById("login-form");
+        const loginErrorMsg = document.getElementById("login-error-msg");
+        const logoutBtn = document.getElementById("auth-hero-logout");
+
+        if (loginBtn && loginModal) {
+            loginBtn.addEventListener("click", () => {
+                if (currentUser) {
+                    const hero = document.getElementById("auth-user-hero");
+                    if (hero) hero.scrollIntoView({ behavior: "smooth", block: "start" });
+                } else {
+                    if (loginErrorMsg) loginErrorMsg.style.display = "none";
+                    loginModal.classList.add("active");
+                    const userInp = document.getElementById("login-username-input");
+                    if (userInp) userInp.focus();
+                }
+            });
+        }
+
+        if (closeLoginBtn && loginModal) {
+            closeLoginBtn.addEventListener("click", () => {
+                loginModal.classList.remove("active");
+            });
+        }
+
+        if (loginModal) {
+            loginModal.addEventListener("click", (e) => {
+                if (e.target === loginModal) loginModal.classList.remove("active");
+            });
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                currentUser = null;
+                try {
+                    localStorage.removeItem("kreit_auth_user");
+                } catch (e) {}
+                renderAuthHeroBanner();
+                renderActiveView();
+            });
+        }
+
+        if (loginForm) {
+            loginForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const usernameInput = document.getElementById("login-username-input");
+                const passwordInput = document.getElementById("login-password-input");
+                const submitBtn = document.getElementById("btn-submit-login");
+
+                const username = usernameInput ? usernameInput.value.trim() : "";
+                const password = passwordInput ? passwordInput.value.trim() : "";
+
+                if (!username || !password) return;
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = "ПРОВЕРКА...";
+                }
+                if (loginErrorMsg) loginErrorMsg.style.display = "none";
+
+                try {
+                    let resp = null;
+                    try {
+                        resp = await fetch("/api/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username, password })
+                        });
+                    } catch (netErr) {
+                        resp = await fetch("http://127.0.0.1:5055/api/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username, password })
+                        });
+                    }
+
+                    const result = await resp.json();
+                    if (result.success && result.user) {
+                        currentUser = result.user;
+                        try {
+                            localStorage.setItem("kreit_auth_user", JSON.stringify(currentUser));
+                        } catch (e) {}
+
+                        if (loginModal) loginModal.classList.remove("active");
+                        if (loginForm) loginForm.reset();
+
+                        renderAuthHeroBanner();
+                        renderActiveView();
+                        runTextScrambleAnimation(1000);
+                    } else {
+                        if (loginErrorMsg) {
+                            loginErrorMsg.innerText = result.error || "Неверный юзернейм или пароль!";
+                            loginErrorMsg.style.display = "block";
+                        }
+                    }
+                } catch (err) {
+                    if (loginErrorMsg) {
+                        loginErrorMsg.innerText = "Ошибка соединения с сервером. Попробуйте еще раз.";
+                        loginErrorMsg.style.display = "block";
+                    }
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<span>ВОЙТИ В СИСТЕМУ</span><span class="btn-arrow">→</span>`;
+                    }
+                }
+            });
+        }
+
         // Start initial sync & continuous loop every 3 seconds
-        fetchSyncData();
+        fetchSyncData().then(() => {
+            // Run text scramble animation on first load (1 sec)
+            runTextScrambleAnimation(1000);
+        });
         setInterval(fetchSyncData, 3000);
     });
 })();

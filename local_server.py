@@ -1,10 +1,19 @@
 import os
+import sys
 import json
 import time
 import asyncio
 from pathlib import Path
 import aiohttp
+import aiosqlite
 from aiohttp import web
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 BASE_DIR = Path(__file__).parent.resolve()
 DATA_DIR = BASE_DIR / "data"
@@ -206,6 +215,87 @@ async def api_user_detail(request):
         return cors_headers(web.json_response({"error": str(e)}, status=500))
 
 
+async def api_login(request):
+    """Авторизация пользователя по юзернейму и 4-значному паролю GENY."""
+    if request.method == "OPTIONS":
+        return cors_headers(web.Response(status=204))
+
+    try:
+        body = await request.json()
+    except Exception:
+        return cors_headers(web.json_response({"success": False, "error": "Неверный формат запроса"}, status=400))
+
+    login_input = str(body.get("username", "")).strip().lower().lstrip("@")
+    password_input = str(body.get("password", "")).strip()
+
+    if not login_input:
+        return cors_headers(web.json_response({"success": False, "error": "Введите Discord юзернейм"}, status=400))
+
+    if not password_input:
+        return cors_headers(web.json_response({"success": False, "error": "Введите 4-значный пароль GENY"}, status=400))
+
+    if len(password_input) != 4 or not password_input.isdigit():
+        return cors_headers(web.json_response({"success": False, "error": "Пароль GENY должен состоять ровно из 4 цифр"}, status=400))
+
+    # 1. Проверяем напрямую из БД bot_database.db
+    db_path = BASE_DIR.parent / "bot_database.db"
+    matched_user = None
+
+    if db_path.exists():
+        try:
+            async with aiosqlite.connect(str(db_path)) as conn:
+                conn.row_factory = aiosqlite.Row
+                async with conn.execute("""
+                    SELECT * FROM users
+                    WHERE registered = 1 
+                      AND gen_password = ?
+                      AND (
+                          LOWER(discord_username) = ?
+                          OR LOWER(discord_display_name) = ?
+                          OR LOWER(COALESCE(site_username, '')) = ?
+                          OR CAST(user_id AS TEXT) = ?
+                      )
+                """, (password_input, login_input, login_input, login_input, login_input)) as cursor:
+                    row = await cursor.fetchone()
+                    if row:
+                        matched_user = dict(row)
+        except Exception as e:
+            print(f"[LOGIN_DB] Ошибка запроса к БД: {e}")
+
+    # 2. Если в БД не найден или была ошибка, проверяем live_data / cache
+    if not matched_user:
+        cached_users = (app_state["live_data"] or load_cached_data()).get("users", [])
+        for u in cached_users:
+            u_pass = str(u.get("gen_password", "")).strip()
+            u_login = str(u.get("username", "")).lower().lstrip("@")
+            u_disp = str(u.get("display_name", "")).lower().lstrip("@")
+            u_site = str(u.get("site_username", "")).lower().lstrip("@")
+            u_disc = str(u.get("discord_username", "")).lower().lstrip("@")
+            u_id = str(u.get("user_id", ""))
+
+            if u_pass == password_input and (login_input in (u_login, u_disp, u_site, u_disc, u_id)):
+                matched_user = dict(u)
+                break
+
+    if not matched_user:
+        return cors_headers(web.json_response({
+            "success": False,
+            "error": "Неверный юзернейм или 4-значный пароль! Убедитесь, что вы создали пароль в Discord боте через команду /профиль -> GENY."
+        }, status=401))
+
+    # Очищаем пароль перед отправкой на клиент
+    matched_user.pop("gen_password", None)
+
+    # Токен сессии
+    token = f"kreit_{matched_user.get('user_id')}_{int(time.time())}"
+
+    return cors_headers(web.json_response({
+        "success": True,
+        "token": token,
+        "user": matched_user
+    }))
+
+
 async def index_handler(request):
     """Отдает главную страницу сайта."""
     index_file = PUBLIC_DIR / "index.html"
@@ -230,6 +320,7 @@ def init_app():
     app.router.add_get("/api/users", api_users)
     app.router.add_get("/api/top", api_top)
     app.router.add_get("/api/user/{id}", api_user_detail)
+    app.router.add_post("/api/login", api_login)
 
     # Статика
     if (PUBLIC_DIR / "css").exists():
@@ -257,5 +348,5 @@ def init_app():
 
 
 if __name__ == "__main__":
-    print(f"🚀 Запуск веб-сервера KREIT на порту {PORT}...")
+    print(f"[START] Запуск веб-сервера KREIT на порту {PORT}...")
     web.run_app(init_app(), host="0.0.0.0", port=PORT)

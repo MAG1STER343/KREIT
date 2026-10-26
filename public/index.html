@@ -21,13 +21,80 @@
                 </div>
             </div>
 
-            <!-- Bot Live Status Indicator -->
-            <div id="bot-status-badge" class="status-pill online">
-                <div class="pulse-dot"></div>
-                <span id="bot-status-text">ПОДКЛЮЧЕНИЕ...</span>
-                <span id="sync-timer-text" class="sync-timer">• 5 сек</span>
+            <!-- Header Right Controls -->
+            <div class="header-right-actions">
+                <!-- Bot Live Status Indicator -->
+                <div id="bot-status-badge" class="status-pill online">
+                    <div class="pulse-dot"></div>
+                    <span id="bot-status-text">ПОДКЛЮЧЕНИЕ...</span>
+                    <span id="sync-timer-text" class="sync-timer">• 5 сек</span>
+                </div>
+
+                <!-- Auth Trigger / User Button -->
+                <button id="btn-open-login" class="login-trigger-btn">
+                    <span class="btn-key-icon">🔑</span>
+                    <span id="btn-login-label">ВОЙТИ</span>
+                </button>
             </div>
         </header>
+
+        <!-- TOP AUTHORIZED USER HERO PROFILE BANNER (СВЕРХУ ПРИ ВХОДЕ) -->
+        <section id="auth-user-hero" class="auth-hero-banner" style="display: none;">
+            <div class="auth-hero-container">
+                <!-- Top Big GEN Bar -->
+                <div class="auth-hero-header">
+                    <div class="auth-hero-gen-big" id="auth-hero-gen-big">GEN 0.00000</div>
+                    <div class="auth-hero-status-tag">
+                        <span class="pulse-dot active-green"></span>
+                        <span class="auth-tag-text">АВТОРИЗОВАННЫЙ ПРОФИЛЬ</span>
+                    </div>
+                    <button id="auth-hero-logout" class="auth-logout-btn" title="Выйти из аккаунта">ВЫЙТИ 🚪</button>
+                </div>
+
+                <!-- Hero Body -->
+                <div class="auth-hero-body">
+                    <!-- Left: Avatar + Identity -->
+                    <div class="auth-hero-user">
+                        <div class="auth-hero-avatar-box">
+                            <img id="auth-hero-avatar" class="auth-hero-avatar" src="" alt="Avatar" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            <div class="auth-hero-rank-disc" id="auth-hero-disc">🧬</div>
+                        </div>
+                        <div class="auth-hero-user-info">
+                            <div class="auth-hero-display-name" id="auth-hero-name">—</div>
+                            <div class="auth-hero-login" id="auth-hero-login">@username</div>
+                            <div class="auth-hero-gen-color" id="auth-hero-color">Цвет GEN</div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Metrics Grid -->
+                    <div class="auth-hero-stats">
+                        <div class="hero-stat-box">
+                            <div class="hero-stat-label">БАЛАНС G.COIN</div>
+                            <div class="hero-stat-val val-coins" id="auth-hero-coins">0</div>
+                        </div>
+                        <div class="hero-stat-box">
+                            <div class="hero-stat-label">БАЛАНС STARS</div>
+                            <div class="hero-stat-val val-stars" id="auth-hero-stars">0.0 ⭐</div>
+                        </div>
+                        <div class="hero-stat-box">
+                            <div class="hero-stat-label">ВОЙС-ОНЛАЙН</div>
+                            <div class="hero-stat-val val-voice" id="auth-hero-voice">0 ч 0 мин</div>
+                        </div>
+                        <div class="hero-stat-box">
+                            <div class="hero-stat-label">ФАКТОР ДОВЕРИЯ</div>
+                            <div class="hero-stat-val val-factor" id="auth-hero-factor">
+                                <img id="auth-hero-shield" class="hero-shield-icon" src="/assets/emojis/shield_green.png">
+                                <span id="auth-hero-factor-num">60.0 / 120</span>
+                            </div>
+                        </div>
+                        <div class="hero-stat-box">
+                            <div class="hero-stat-label">УРОВЕНЬ & СТРИК</div>
+                            <div class="hero-stat-val val-lvl" id="auth-hero-level">LVL 1 • 🔥 0 дн.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- Stats Overview Grid -->
         <section class="stats-grid">
@@ -206,6 +273,54 @@
             <div>
                 <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 10px;">ПОДАРКИ НА ПРОФИЛЕ</div>
                 <div id="modal-presents-container" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN MODAL (АВТОРИЗАЦИЯ НА САЙТЕ) -->
+    <div id="login-modal" class="modal-overlay">
+        <div class="modal-card login-modal-card">
+            <button class="modal-close" id="btn-close-login">&times;</button>
+            <div class="login-modal-header">
+                <div class="brand-icon" style="margin: 0 auto 14px; width: 48px; height: 48px; font-size: 24px;">🔐</div>
+                <h2 class="login-modal-title">ВХОД В KREIT · GENY</h2>
+                <div class="login-modal-sub">Используйте ваш Discord юзернейм и 4-значный пароль GENY</div>
+            </div>
+
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <label class="input-label" for="login-username-input">ДИСКОРД ЮЗЕРНЕЙМ</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">@</span>
+                        <input type="text" id="login-username-input" class="cyber-input" placeholder="например: minezii" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label" for="login-password-input">4-ЗНАЧНЫЙ ПАРОЛЬ GENY</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">🔑</span>
+                        <input type="password" id="login-password-input" class="cyber-input" placeholder="••••" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <div id="login-error-msg" class="login-error-box" style="display: none;"></div>
+
+                <button type="submit" id="btn-submit-login" class="cyber-btn-submit">
+                    <span>ВОЙТИ В СИСТЕМУ</span>
+                    <span class="btn-arrow">→</span>
+                </button>
+            </form>
+
+            <div class="login-modal-divider"><span>ИЛИ</span></div>
+
+            <a href="https://discord.com/oauth2/authorize?client_id=1524868127392010471&response_type=code&scope=identify" target="_blank" class="discord-oauth-btn">
+                <span class="discord-icon">💬</span>
+                <span>ВОЙТИ ЧЕРЕЗ DISCORD ПРИЛОЖЕНИЕ</span>
+            </a>
+
+            <div class="login-modal-hint">
+                💡 <strong>Где создать пароль?</strong> Откройте Discord, введите команду <code>/профиль</code> или <code>!профиль</code> и нажмите кнопку <code>GENY</code>. Бот сразу предложит создать ваш 4-значный пароль для входа!
             </div>
         </div>
     </div>
