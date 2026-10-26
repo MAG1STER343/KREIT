@@ -1,7 +1,7 @@
 {
   "bot_online": true,
   "bot_name": "Geny",
-  "timestamp": 1793038659,
+  "timestamp": 1793039234,
   "stats": {
     "total_users": 34,
     "total_coins": 844721,
@@ -5364,5 +5364,5 @@
   },
   "market": [],
   "is_cached": false,
-  "last_sync": 1793038659
+  "last_sync": 1793039234
 }
