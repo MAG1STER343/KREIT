@@ -714,6 +714,16 @@
         const loginForm = document.getElementById("login-form");
         const loginErrorMsg = document.getElementById("login-error-msg");
         const logoutBtn = document.getElementById("auth-hero-logout");
+        const discordOauthBtn = document.getElementById("btn-discord-oauth");
+
+        // Discord OAuth 2.0 Button click with exact redirect_uri
+        if (discordOauthBtn) {
+            discordOauthBtn.addEventListener("click", () => {
+                const redirectUri = window.location.origin + window.location.pathname;
+                const oauthUrl = `https://discord.com/oauth2/authorize?client_id=1524868127392010471&response_type=token&scope=identify&redirect_uri=${encodeURIComponent(redirectUri)}`;
+                window.location.href = oauthUrl;
+            });
+        }
 
         if (loginBtn && loginModal) {
             loginBtn.addEventListener("click", () => {
@@ -819,8 +829,102 @@
             });
         }
 
+        // ================== DISCORD OAUTH CALLBACK & URL 1-CLICK LOGIN ==================
+        async function checkDiscordOAuthCallback() {
+            const hash = window.location.hash.substring(1);
+            if (!hash.includes("access_token=")) return false;
+
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get("access_token");
+            if (!accessToken) return false;
+
+            try {
+                const resp = await fetch("https://discord.com/api/users/@me", {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+                if (resp.ok) {
+                    const discordUser = await resp.json();
+                    const discordId = String(discordUser.id);
+                    const discordName = String(discordUser.username || "").toLowerCase();
+
+                    if (!globalData || !globalData.users) {
+                        await fetchSyncData();
+                    }
+
+                    const matched = (globalData && globalData.users ? globalData.users : []).find(u =>
+                        String(u.user_id) === discordId ||
+                        String(u.discord_username || "").toLowerCase() === discordName ||
+                        String(u.username || "").toLowerCase() === discordName
+                    );
+
+                    if (matched) {
+                        currentUser = matched;
+                        try {
+                            localStorage.setItem("kreit_auth_user", JSON.stringify(currentUser));
+                        } catch (e) {}
+
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        renderAuthHeroBanner();
+                        renderActiveView();
+                        runTextScrambleAnimation(1000);
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.warn("[DISCORD_AUTH]", e);
+            }
+            return false;
+        }
+
+        async function checkUrlAutoLogin() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const authUser = urlParams.get("auth_user") || urlParams.get("user") || urlParams.get("u");
+            const authPass = urlParams.get("auth_pass") || urlParams.get("pass") || urlParams.get("p");
+
+            if (authUser && authPass) {
+                try {
+                    let resp = null;
+                    try {
+                        resp = await fetch("/api/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: authUser, password: authPass })
+                        });
+                    } catch (err) {
+                        resp = await fetch("http://127.0.0.1:5055/api/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: authUser, password: authPass })
+                        });
+                    }
+
+                    if (resp && resp.ok) {
+                        const result = await resp.json();
+                        if (result.success && result.user) {
+                            currentUser = result.user;
+                            try {
+                                localStorage.setItem("kreit_auth_user", JSON.stringify(currentUser));
+                            } catch (e) {}
+
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                            renderAuthHeroBanner();
+                            renderActiveView();
+                            runTextScrambleAnimation(1000);
+                            return true;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("[AUTO_LOGIN]", e);
+                }
+            }
+            return false;
+        }
+
         // Start initial sync & continuous loop every 3 seconds
-        fetchSyncData().then(() => {
+        fetchSyncData().then(async () => {
+            // Check for direct login from Discord button or OAuth
+            await checkUrlAutoLogin();
+            await checkDiscordOAuthCallback();
             // Run text scramble animation on first load (1 sec)
             runTextScrambleAnimation(1000);
         });
