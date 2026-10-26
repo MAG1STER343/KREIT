@@ -712,15 +712,64 @@
         const loginModal = document.getElementById("login-modal");
         const closeLoginBtn = document.getElementById("btn-close-login");
         const loginForm = document.getElementById("login-form");
+        const quickCodeForm = document.getElementById("quick-code-form");
         const loginErrorMsg = document.getElementById("login-error-msg");
+        const codeErrorMsg = document.getElementById("code-error-msg");
         const logoutBtn = document.getElementById("auth-hero-logout");
         const discordOauthBtn = document.getElementById("btn-discord-oauth");
+        const uriInput = document.getElementById("uri-copy-input");
+        const copyUriBtn = document.getElementById("btn-copy-uri");
+
+        // Auth Tabs Switching (Password / Quick Code / Discord)
+        document.querySelectorAll(".login-tab-btn").forEach(tabBtn => {
+            tabBtn.addEventListener("click", () => {
+                document.querySelectorAll(".login-tab-btn").forEach(b => b.classList.remove("active"));
+                tabBtn.classList.add("active");
+                const targetTab = tabBtn.dataset.authTab;
+
+                document.querySelectorAll(".auth-tab-content").forEach(content => {
+                    if (content.dataset.authContent === targetTab) {
+                        content.style.display = "flex";
+                        if (content.tagName === "FORM") content.style.display = "flex";
+                        else content.style.display = "block";
+                    } else {
+                        content.style.display = "none";
+                    }
+                });
+
+                if (targetTab === "password") {
+                    const uInp = document.getElementById("login-username-input");
+                    if (uInp) uInp.focus();
+                } else if (targetTab === "code") {
+                    const cInp = document.getElementById("quick-code-input");
+                    if (cInp) cInp.focus();
+                }
+            });
+        });
+
+        // Set and Copy exact Redirect URI
+        const currentRedirectUri = window.location.origin + window.location.pathname;
+        if (uriInput) {
+            uriInput.value = currentRedirectUri;
+        }
+        if (copyUriBtn && uriInput) {
+            copyUriBtn.addEventListener("click", () => {
+                navigator.clipboard.writeText(currentRedirectUri).then(() => {
+                    copyUriBtn.innerText = "СКОПИРОВАНО! ✓";
+                    setTimeout(() => { copyUriBtn.innerText = "КОПИРОВАТЬ"; }, 2000);
+                }).catch(() => {
+                    uriInput.select();
+                    document.execCommand("copy");
+                    copyUriBtn.innerText = "СКОПИРОВАНО! ✓";
+                    setTimeout(() => { copyUriBtn.innerText = "КОПИРОВАТЬ"; }, 2000);
+                });
+            });
+        }
 
         // Discord OAuth 2.0 Button click with exact redirect_uri
         if (discordOauthBtn) {
             discordOauthBtn.addEventListener("click", () => {
-                const redirectUri = window.location.origin + window.location.pathname;
-                const oauthUrl = `https://discord.com/oauth2/authorize?client_id=1524868127392010471&response_type=token&scope=identify&redirect_uri=${encodeURIComponent(redirectUri)}`;
+                const oauthUrl = `https://discord.com/oauth2/authorize?client_id=1524868127392010471&response_type=token&scope=identify&redirect_uri=${encodeURIComponent(currentRedirectUri)}`;
                 window.location.href = oauthUrl;
             });
         }
@@ -732,6 +781,7 @@
                     if (hero) hero.scrollIntoView({ behavior: "smooth", block: "start" });
                 } else {
                     if (loginErrorMsg) loginErrorMsg.style.display = "none";
+                    if (codeErrorMsg) codeErrorMsg.style.display = "none";
                     loginModal.classList.add("active");
                     const userInp = document.getElementById("login-username-input");
                     if (userInp) userInp.focus();
@@ -762,6 +812,7 @@
             });
         }
 
+        // 1. Password login submit
         if (loginForm) {
             loginForm.addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -829,6 +880,71 @@
             });
         }
 
+        // 2. Quick Code login submit (/код)
+        if (quickCodeForm) {
+            quickCodeForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const codeInput = document.getElementById("quick-code-input");
+                const submitCodeBtn = document.getElementById("btn-submit-code");
+                const code = codeInput ? codeInput.value.trim() : "";
+
+                if (!code || code.length !== 6) return;
+
+                if (submitCodeBtn) {
+                    submitCodeBtn.disabled = true;
+                    submitCodeBtn.innerText = "ПРОВЕРКА КОДА...";
+                }
+                if (codeErrorMsg) codeErrorMsg.style.display = "none";
+
+                try {
+                    let resp = null;
+                    try {
+                        resp = await fetch("/api/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ quick_code: code })
+                        });
+                    } catch (netErr) {
+                        resp = await fetch("http://127.0.0.1:5055/api/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ quick_code: code })
+                        });
+                    }
+
+                    const result = await resp.json();
+                    if (result.success && result.user) {
+                        currentUser = result.user;
+                        try {
+                            localStorage.setItem("kreit_auth_user", JSON.stringify(currentUser));
+                        } catch (e) {}
+
+                        if (loginModal) loginModal.classList.remove("active");
+                        if (quickCodeForm) quickCodeForm.reset();
+
+                        renderAuthHeroBanner();
+                        renderActiveView();
+                        runTextScrambleAnimation(1000);
+                    } else {
+                        if (codeErrorMsg) {
+                            codeErrorMsg.innerText = result.error || "Неверный или просроченный код!";
+                            codeErrorMsg.style.display = "block";
+                        }
+                    }
+                } catch (err) {
+                    if (codeErrorMsg) {
+                        codeErrorMsg.innerText = "Ошибка соединения. Убедитесь, что бот онлайн.";
+                        codeErrorMsg.style.display = "block";
+                    }
+                } finally {
+                    if (submitCodeBtn) {
+                        submitCodeBtn.disabled = false;
+                        submitCodeBtn.innerHTML = `<span>ВОЙТИ ПО КОДУ</span><span class="btn-arrow">⚡</span>`;
+                    }
+                }
+            });
+        }
+
         // ================== DISCORD OAUTH CALLBACK & URL 1-CLICK LOGIN ==================
         async function checkDiscordOAuthCallback() {
             const hash = window.location.hash.substring(1);
@@ -880,21 +996,29 @@
             const urlParams = new URLSearchParams(window.location.search);
             const authUser = urlParams.get("auth_user") || urlParams.get("user") || urlParams.get("u");
             const authPass = urlParams.get("auth_pass") || urlParams.get("pass") || urlParams.get("p");
+            const quickCode = urlParams.get("quick_code") || urlParams.get("code") || urlParams.get("c");
 
-            if (authUser && authPass) {
+            let requestBody = null;
+            if (quickCode) {
+                requestBody = { quick_code: quickCode };
+            } else if (authUser && authPass) {
+                requestBody = { username: authUser, password: authPass };
+            }
+
+            if (requestBody) {
                 try {
                     let resp = null;
                     try {
                         resp = await fetch("/api/login", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ username: authUser, password: authPass })
+                            body: JSON.stringify(requestBody)
                         });
                     } catch (err) {
                         resp = await fetch("http://127.0.0.1:5055/api/login", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ username: authUser, password: authPass })
+                            body: JSON.stringify(requestBody)
                         });
                     }
 

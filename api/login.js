@@ -24,19 +24,10 @@ module.exports = async (req, res) => {
     }
     body = body || {};
 
-    const loginInput = String(body.username || '').trim().toLowerCase().replace(/^@/, '');
-    const passwordInput = String(body.password || '').trim();
-
-    if (!loginInput) {
-        return res.status(400).json({ success: false, error: 'Введите Discord юзернейм' });
-    }
-
-    if (!passwordInput || passwordInput.length !== 4 || !/^\d{4}$/.test(passwordInput)) {
-        return res.status(400).json({ success: false, error: 'Пароль GENY должен состоять ровно из 4 цифр' });
-    }
+    const quickCode = String(body.quick_code || '').trim();
+    const botUrl = process.env.BOT_API_URL;
 
     // 1. Попытка перенаправить на бота, если BOT_API_URL доступен
-    const botUrl = process.env.BOT_API_URL;
     if (botUrl) {
         try {
             const loginUrl = botUrl.replace(/\/sync\/?$/, '/login');
@@ -45,7 +36,7 @@ module.exports = async (req, res) => {
             const botResp = await fetch(loginUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: loginInput, password: passwordInput }),
+                body: JSON.stringify(body),
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
@@ -56,6 +47,24 @@ module.exports = async (req, res) => {
         } catch (e) {
             // bot unavailable, fallback to cache
         }
+    }
+
+    if (quickCode) {
+        return res.status(400).json({
+            success: false,
+            error: 'Для входа по быстрому коду бот должен быть онлайн или используйте вход по логину и паролю.'
+        });
+    }
+
+    const loginInput = String(body.username || '').trim().toLowerCase().replace(/^@/, '');
+    const passwordInput = String(body.password || '').trim();
+
+    if (!loginInput) {
+        return res.status(400).json({ success: false, error: 'Введите Discord юзернейм' });
+    }
+
+    if (!passwordInput || passwordInput.length !== 4 || !/^\d{4}$/.test(passwordInput)) {
+        return res.status(400).json({ success: false, error: 'Пароль GENY должен состоять ровно из 4 цифр' });
     }
 
     // 2. Проверка по локальному снимку базы данных

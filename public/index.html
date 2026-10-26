@@ -284,15 +284,23 @@
             <div class="login-modal-header">
                 <div class="brand-icon" style="margin: 0 auto 14px; width: 48px; height: 48px; font-size: 24px;">🔐</div>
                 <h2 class="login-modal-title">ВХОД В KREIT · GENY</h2>
-                <div class="login-modal-sub">Используйте ваш Discord юзернейм и 4-значный пароль GENY</div>
+                <div class="login-modal-sub">Выберите удобный способ авторизации</div>
             </div>
 
-            <form id="login-form" class="login-form">
+            <!-- Auth Mode Switcher -->
+            <div class="login-tabs-bar">
+                <button type="button" class="login-tab-btn active" data-auth-tab="password">🔑 ПАРОЛЬ</button>
+                <button type="button" class="login-tab-btn" data-auth-tab="code">⚡ КОД /КОД</button>
+                <button type="button" class="login-tab-btn" data-auth-tab="discord">💬 DISCORD</button>
+            </div>
+
+            <!-- 1. Password Form -->
+            <form id="login-form" class="login-form auth-tab-content active" data-auth-content="password">
                 <div class="input-group">
                     <label class="input-label" for="login-username-input">ДИСКОРД ЮЗЕРНЕЙМ</label>
                     <div class="input-wrapper">
                         <span class="input-prefix">@</span>
-                        <input type="text" id="login-username-input" class="cyber-input" placeholder="например: minezii" required autocomplete="username">
+                        <input type="text" id="login-username-input" class="cyber-input" placeholder="например: minezii" autocomplete="username">
                     </div>
                 </div>
 
@@ -300,7 +308,7 @@
                     <label class="input-label" for="login-password-input">4-ЗНАЧНЫЙ ПАРОЛЬ GENY</label>
                     <div class="input-wrapper">
                         <span class="input-prefix">🔑</span>
-                        <input type="password" id="login-password-input" class="cyber-input" placeholder="••••" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required autocomplete="current-password">
+                        <input type="password" id="login-password-input" class="cyber-input" placeholder="••••" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" autocomplete="current-password">
                     </div>
                 </div>
 
@@ -312,15 +320,54 @@
                 </button>
             </form>
 
-            <div class="login-modal-divider"><span>ИЛИ</span></div>
+            <!-- 2. Quick Code Form -->
+            <form id="quick-code-form" class="login-form auth-tab-content" data-auth-content="code" style="display: none;">
+                <div class="input-group">
+                    <label class="input-label" for="quick-code-input">6-ЗНАЧНЫЙ ОДНОРАЗОВЫЙ КОД</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">⚡</span>
+                        <input type="text" id="quick-code-input" class="cyber-input" placeholder="например: 482910" maxlength="6" pattern="[0-9]{6}" inputmode="numeric">
+                    </div>
+                </div>
 
-            <button type="button" id="btn-discord-oauth" class="discord-oauth-btn">
-                <span class="discord-icon">💬</span>
-                <span>ВОЙТИ ЧЕРЕЗ DISCORD</span>
-            </button>
+                <div class="login-hint-panel">
+                    💡 <strong>Как получить код:</strong> Напишите боту в Discord команду <code>/код</code> (или <code>/code</code>) — он мгновенно пришлёт вам 6 цифр для моментального входа.
+                </div>
 
-            <div class="login-modal-hint">
-                ⚡ <strong>Мгновенный вход в 1 клик:</strong> Откройте ЛС с ботом в Discord и нажмите <code>[🌐 Войти на сайт KREIT]</code> в закреплённом сообщении, либо отправьте боту команду <code>/сайт</code>. Сайт откроется и сразу авторизует вас без ручного ввода!
+                <div id="code-error-msg" class="login-error-box" style="display: none;"></div>
+
+                <button type="submit" id="btn-submit-code" class="cyber-btn-submit">
+                    <span>ВОЙТИ ПО КОДУ</span>
+                    <span class="btn-arrow">⚡</span>
+                </button>
+            </form>
+
+            <!-- 3. Discord Direct & OAuth Info Tab -->
+            <div class="auth-tab-content" data-auth-content="discord" style="display: none;">
+                <button type="button" id="btn-discord-oauth" class="discord-oauth-btn" style="width: 100%; margin-bottom: 14px;">
+                    <span class="discord-icon">💬</span>
+                    <span>ВОЙТИ ЧЕРЕЗ DISCORD OAUTH</span>
+                </button>
+
+                <div class="redirect-uri-box">
+                    <div class="uri-box-title">⚠️ Если Discord пишет «Некорректный OAuth2 redirect_uri»:</div>
+                    <div class="uri-box-text">
+                        Discord требует разрешить адрес сайта в панели разработчика.
+                    </div>
+                    <div class="uri-copy-row">
+                        <input type="text" id="uri-copy-input" class="uri-text-field" readonly>
+                        <button type="button" id="btn-copy-uri" class="uri-copy-btn">КОПИРОВАТЬ</button>
+                    </div>
+                    <div class="uri-instructions">
+                        1. Откройте <a href="https://discord.com/developers/applications/1524868127392010471/oauth2/general" target="_blank" class="cyber-link">Discord Developer Portal ↗</a><br>
+                        2. В блоке <strong>Redirects</strong> нажмите <strong>Add Redirect</strong> и вставьте скопированный адрес.<br>
+                        3. Нажмите <strong>Save Changes</strong> внизу страницы!
+                    </div>
+                </div>
+
+                <div class="login-modal-hint" style="margin-top: 14px;">
+                    ⚡ <strong>Или войдите без настроек:</strong> Введите в Discord команду <code>/сайт</code> или нажмите кнопку <code>[🌐 Войти на сайт KREIT]</code> в ЛС у бота — сайт откроется сразу авторизованным!
+                </div>
             </div>
         </div>
     </div>

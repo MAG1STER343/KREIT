@@ -216,7 +216,7 @@ async def api_user_detail(request):
 
 
 async def api_login(request):
-    """Авторизация пользователя по юзернейму и 4-значному паролю GENY."""
+    """Авторизация пользователя по юзернейму + паролю GENY, либо по 6-значному быстрому коду (/код)."""
     if request.method == "OPTIONS":
         return cors_headers(web.Response(status=204))
 
@@ -225,68 +225,92 @@ async def api_login(request):
     except Exception:
         return cors_headers(web.json_response({"success": False, "error": "Неверный формат запроса"}, status=400))
 
-    login_input = str(body.get("username", "")).strip().lower().lstrip("@")
-    password_input = str(body.get("password", "")).strip()
-
-    if not login_input:
-        return cors_headers(web.json_response({"success": False, "error": "Введите Discord юзернейм"}, status=400))
-
-    if not password_input:
-        return cors_headers(web.json_response({"success": False, "error": "Введите 4-значный пароль GENY"}, status=400))
-
-    if len(password_input) != 4 or not password_input.isdigit():
-        return cors_headers(web.json_response({"success": False, "error": "Пароль GENY должен состоять ровно из 4 цифр"}, status=400))
-
-    # 1. Проверяем напрямую из БД bot_database.db
-    db_path = BASE_DIR.parent / "bot_database.db"
+    quick_code = str(body.get("quick_code", "")).strip()
     matched_user = None
+    db_path = BASE_DIR.parent / "bot_database.db"
 
-    if db_path.exists():
-        try:
-            async with aiosqlite.connect(str(db_path)) as conn:
-                conn.row_factory = aiosqlite.Row
-                async with conn.execute("""
-                    SELECT * FROM users
-                    WHERE registered = 1 
-                      AND gen_password = ?
-                      AND (
-                          LOWER(discord_username) = ?
-                          OR LOWER(discord_display_name) = ?
-                          OR LOWER(COALESCE(site_username, '')) = ?
-                          OR CAST(user_id AS TEXT) = ?
-                      )
-                """, (password_input, login_input, login_input, login_input, login_input)) as cursor:
-                    row = await cursor.fetchone()
-                    if row:
-                        matched_user = dict(row)
-        except Exception as e:
-            print(f"[LOGIN_DB] Ошибка запроса к БД: {e}")
+    # 1. Вход по быстрому одноразовому коду из Discord
+    if quick_code:
+        if db_path.exists():
+            try:
+                now = int(time.time())
+                async with aiosqlite.connect(str(db_path)) as conn:
+                    conn.row_factory = aiosqlite.Row
+                    async with conn.execute("SELECT user_id FROM quick_login_codes WHERE code = ? AND expires_at >= ?", (quick_code, now)) as cursor:
+                        row = await cursor.fetchone()
+                        if row:
+                            uid = row["user_id"]
+                            await conn.execute("DELETE FROM quick_login_codes WHERE code = ?", (quick_code,))
+                            await conn.commit()
+                            async with conn.execute("SELECT * FROM users WHERE user_id = ?", (uid,)) as u_cursor:
+                                u_row = await u_cursor.fetchone()
+                                if u_row:
+                                    matched_user = dict(u_row)
+            except Exception as e:
+                print(f"[LOGIN_QUICK_DB] {e}")
 
-    # 2. Если в БД не найден или была ошибка, проверяем live_data / cache
-    if not matched_user:
-        cached_users = (app_state["live_data"] or load_cached_data()).get("users", [])
-        for u in cached_users:
-            u_pass = str(u.get("gen_password", "")).strip()
-            u_login = str(u.get("username", "")).lower().lstrip("@")
-            u_disp = str(u.get("display_name", "")).lower().lstrip("@")
-            u_site = str(u.get("site_username", "")).lower().lstrip("@")
-            u_disc = str(u.get("discord_username", "")).lower().lstrip("@")
-            u_id = str(u.get("user_id", ""))
+        if not matched_user:
+            return cors_headers(web.json_response({
+                "success": False,
+                "error": "Неверный или устаревший код! Введите /код в Discord боте, чтобы получить новый 6-значный код."
+            }, status=401))
 
-            if u_pass == password_input and (login_input in (u_login, u_disp, u_site, u_disc, u_id)):
-                matched_user = dict(u)
-                break
+    # 2. Вход по Discord юзернейму и 4-значному паролю
+    else:
+        login_input = str(body.get("username", "")).strip().lower().lstrip("@")
+        password_input = str(body.get("password", "")).strip()
 
-    if not matched_user:
-        return cors_headers(web.json_response({
-            "success": False,
-            "error": "Неверный юзернейм или 4-значный пароль! Убедитесь, что вы создали пароль в Discord боте через команду /профиль -> GENY."
-        }, status=401))
+        if not login_input:
+            return cors_headers(web.json_response({"success": False, "error": "Введите Discord юзернейм"}, status=400))
 
-    # Очищаем пароль перед отправкой на клиент
+        if not password_input:
+            return cors_headers(web.json_response({"success": False, "error": "Введите 4-значный пароль GENY"}, status=400))
+
+        if len(password_input) != 4 or not password_input.isdigit():
+            return cors_headers(web.json_response({"success": False, "error": "Пароль GENY должен состоять ровно из 4 цифр"}, status=400))
+
+        if db_path.exists():
+            try:
+                async with aiosqlite.connect(str(db_path)) as conn:
+                    conn.row_factory = aiosqlite.Row
+                    async with conn.execute("""
+                        SELECT * FROM users
+                        WHERE registered = 1 
+                          AND gen_password = ?
+                          AND (
+                              LOWER(discord_username) = ?
+                              OR LOWER(discord_display_name) = ?
+                              OR LOWER(COALESCE(site_username, '')) = ?
+                              OR CAST(user_id AS TEXT) = ?
+                          )
+                    """, (password_input, login_input, login_input, login_input, login_input)) as cursor:
+                        row = await cursor.fetchone()
+                        if row:
+                            matched_user = dict(row)
+            except Exception as e:
+                print(f"[LOGIN_DB] Ошибка запроса к БД: {e}")
+
+        if not matched_user:
+            cached_users = (app_state["live_data"] or load_cached_data()).get("users", [])
+            for u in cached_users:
+                u_pass = str(u.get("gen_password", "")).strip()
+                u_login = str(u.get("username", "")).lower().lstrip("@")
+                u_disp = str(u.get("display_name", "")).lower().lstrip("@")
+                u_site = str(u.get("site_username", "")).lower().lstrip("@")
+                u_disc = str(u.get("discord_username", "")).lower().lstrip("@")
+                u_id = str(u.get("user_id", ""))
+
+                if u_pass == password_input and (login_input in (u_login, u_disp, u_site, u_disc, u_id)):
+                    matched_user = dict(u)
+                    break
+
+        if not matched_user:
+            return cors_headers(web.json_response({
+                "success": False,
+                "error": "Неверный юзернейм или 4-значный пароль! Убедитесь, что вы создали пароль в Discord боте через команду /профиль -> GENY."
+            }, status=401))
+
     matched_user.pop("gen_password", None)
-
-    # Токен сессии
     token = f"kreit_{matched_user.get('user_id')}_{int(time.time())}"
 
     return cors_headers(web.json_response({
